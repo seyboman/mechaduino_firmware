@@ -1,0 +1,15 @@
+DIRS += /home/seyboman/ros2-seyboman_riot_ws/install/rclc
+USEMODULE += rclc
+include /home/seyboman/ros2-seyboman_riot_ws/install/rclc/Makefile.include
+DIRS += /home/seyboman/ros2-seyboman_riot_ws/install/std_msgs
+USEMODULE += std_msgs
+include /home/seyboman/ros2-seyboman_riot_ws/install/std_msgs/Makefile.include
+
+USEMODULE += as5047d
+
+USEMODULE += saul_default
+USEMODULE += shell
+USEMODULE += shell_commands
+USEMODULE += ps
+#USEMODULE += gnrc_netif
+#USEMODULE += gnrc_txtsnd
