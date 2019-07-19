@@ -20,21 +20,29 @@ limitations under the License.
 
 #include <stdio.h>
 
+#include <thread.h>
+
 #include <shell.h>
 
-int main(void)
+#include "as5047d_params.h"
+
+#include "mechaduino_state.h"
+#include "mechaduino_commands.h"
+
+
+char rclc_thread_stack[THREAD_STACKSIZE_MAIN];
+
+void *rclc_thread(void *arg)
 {
+  int16_t angle = -1;
+  as5047d_t dev;
+  if (as5047d_init(&dev, &as5047d_params[0])) {
+      puts("[Init of as5047d failed]");
+  }
+
   static int argc = 0;
   static char **argv = NULL;
 
-  /* start shell */
-  puts("Starting the shell now...");
-  char line_buf[SHELL_DEFAULT_BUFSIZE];
-  shell_run(NULL, line_buf, SHELL_DEFAULT_BUFSIZE);
-  /* start shell */
-
-
-/*
   rclc_init(argc, argv);
   rclc_node_t* node = rclc_create_node("talker", "");
   rclc_publisher_t* pub = rclc_create_publisher(node, RCLC_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "chatter", 1);
@@ -48,13 +56,14 @@ int main(void)
   int i = 1;
 
   while (rclc_ok()) {
-    msg.data.size = snprintf(msg.data.data, msg.data.capacity, "Hello World: %i", i++);
+    angle = as5047d_read(&dev);
+    msg.data.size = snprintf(msg.data.data, msg.data.capacity, "Rotary encoder: %i", angle);
     if(msg.data.size > msg.data.capacity) msg.data.size = 0;
 
     //if(msg.data.data[msg.data.size] == '\0') {
-    if(msg.data.data[msg.data.size] == '\0' && i%100==0) {
+    /*if(msg.data.data[msg.data.size] == '\0' && i%100==0) {
       printf("Publishing: '%s'\n", msg.data.data);
-    }
+    }*/
     
     rclc_publish(pub, (const void*)&msg);
 
@@ -63,7 +72,28 @@ int main(void)
     
   rclc_destroy_publisher(pub);
   rclc_destroy_node(node);
-  return 0;
-*/
+}
+
+int main(void)
+{
+  init_params();
+
+  /*
+  thread_create(rclc_thread_stack, sizeof(rclc_thread_stack),
+                    THREAD_PRIORITY_MAIN + 1,
+                    THREAD_CREATE_STACKTEST,
+                    rclc_thread,
+                    NULL, "rclc_thread");
+  */
+
+  if (as5047d_init(&enc_dev, &as5047d_params[0])) {
+      puts("[Init of as5047d failed]");
+  }
+
+  /* start shell */
+  puts("Starting the shell now...");
+  char line_buf[SHELL_DEFAULT_BUFSIZE];
+  shell_run(mechaduino_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
+  /* start shell */
 }
 

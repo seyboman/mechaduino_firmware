@@ -11,5 +11,3 @@ USEMODULE += saul_default
 USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
-#USEMODULE += gnrc_netif
-#USEMODULE += gnrc_txtsnd
