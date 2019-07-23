@@ -8,7 +8,7 @@
 
 #include "mechaduino_state.h"
 
-as5047d_t enc_dev;
+volatile as5047d_t enc_dev;
 
-int dir;
-int stepNumber; // step index for cal routine
+volatile int dir;
+volatile int stepNumber; // step index for cal routine

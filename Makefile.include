@@ -11,3 +11,7 @@ USEMODULE += saul_default
 USEMODULE += shell
 USEMODULE += shell_commands
 USEMODULE += ps
+USEMODULE += periph_pwm
+USEMODULE += xtimer
+
+USEMODULE += auto_init

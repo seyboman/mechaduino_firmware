@@ -11,18 +11,72 @@
 #include <saul_reg.h>
 #include <as5047d.h>
 #include <xtimer.h>
+#include <periph/pwm.h>
 
 #include "mechaduino_params.h"
 
 #include "mechaduino_state.h"
+
+#define ENABLE_DEBUG    (0)
+#include "debug.h"
 
 int mod(int xMod, int mMod) {
   return (xMod % mMod + mMod) % mMod;
 }
 
 void output(float theta, int effort) {
-  (void)theta;
-  (void)effort;
+   int angle_1;
+   int angle_2;
+   int v_coil_A;
+   int v_coil_B;
+
+   int sin_coil_A;
+   int sin_coil_B;
+   int phase_multiplier = 10 * spr / 4;
+
+  //REG_PORT_OUTCLR0 = PORT_PA09; for debugging/timing
+
+  angle_1 = mod((phase_multiplier * theta) , 3600);   //
+  angle_2 = mod((phase_multiplier * theta)+900 , 3600);
+  
+  sin_coil_A  = sin_1[angle_1];
+
+  sin_coil_B = sin_1[angle_2];
+
+  v_coil_A = ((effort * sin_coil_A) / 1024);
+  v_coil_B = ((effort * sin_coil_B) / 1024);
+
+/*    // For debugging phase voltages:
+     SerialUSB.print(v_coil_A);
+     SerialUSB.print(",");
+     SerialUSB.println(v_coil_B);
+*/
+  //analogFastWrite(VREF_1, abs(v_coil_A));
+  //analogFastWrite(VREF_2, abs(v_coil_B));
+  DEBUG("Set pwm on VREF_1...\n");
+  pwm_set(PWM_DEV(1), 1, abs(v_coil_A)); //VREF_1
+  DEBUG("Set pwm on VREF_2...\n");
+  pwm_set(PWM_DEV(0), 0, abs(v_coil_B)); //VREF_2
+
+  DEBUG("Set pins IN_1 and IN_2...\n");
+  if (v_coil_A >= 0)  {
+    gpio_set(IN_2);  //REG_PORT_OUTSET0 = PORT_PA21;     //write IN_2 HIGH
+    gpio_clear(IN_1);   //REG_PORT_OUTCLR0 = PORT_PA06;     //write IN_1 LOW
+  }
+  else  {
+    gpio_clear(IN_2);   //REG_PORT_OUTCLR0 = PORT_PA21;     //write IN_2 LOW
+    gpio_set(IN_1);  //REG_PORT_OUTSET0 = PORT_PA06;     //write IN_1 HIGH
+  }
+
+  DEBUG("Set pins IN_3 and IN_4...\n");
+  if (v_coil_B >= 0)  {
+    gpio_set(IN_4);  //REG_PORT_OUTSET0 = PORT_PA20;     //write IN_4 HIGH
+    gpio_clear(IN_3);   //REG_PORT_OUTCLR0 = PORT_PA15;     //write IN_3 LOW
+  }
+  else  {
+    gpio_clear(IN_4);     //REG_PORT_OUTCLR0 = PORT_PA20;     //write IN_4 LOW
+    gpio_set(IN_3);    //REG_PORT_OUTSET0 = PORT_PA15;     //write IN_3 HIGH
+  }
 }
 
 void oneStep()
@@ -35,17 +89,18 @@ void oneStep()
   }
 
   //output(1.8 * stepNumber, 64); //updata 1.8 to aps..., second number is control effort
+  DEBUG("Call output for one step...\n");
   output(aps * stepNumber, (int)(0.33 * uMAX));
+  DEBUG("Sleeping...\n");
   xtimer_usleep(10000);
+  DEBUG("Returning from oneStep()...\n");
 }
 
 int calibrate_cmd_handler(int argc, char **argv)
 {
-  saul_reg_t* enc_dev = saul_reg_find_type(SAUL_SENSE_ANGLE);
-
-  int encoderReading = 0;     //or float?  not sure if we can average for more res?
-  int currentencoderReading = 0;
-  int lastencoderReading = 0;
+  int16_t encoderReading = 0;     //or float?  not sure if we can average for more res?
+  int16_t currentencoderReading = 0;
+  int16_t lastencoderReading = 0;
   int avg = 10;               //how many readings to average
 
   int iStart = 0;     //encoder zero position index
@@ -64,6 +119,7 @@ int calibrate_cmd_handler(int argc, char **argv)
   oneStep();
   xtimer_usleep(500000);
 
+  DEBUG("Checking if wired backwards...\n");
   if ((as5047d_read(&enc_dev) - encoderReading) < 0)   //check which way motor moves when dir = true
   {
     puts("Wired backwards\n");    // rewiring either phase should fix this.  You may get a false message if you happen to be near the point where the encoder rolls over...
@@ -72,6 +128,7 @@ int calibrate_cmd_handler(int argc, char **argv)
 
   int stepNumber = 0;
   while (stepNumber != 0) {       //go to step zero
+    DEBUG("Running step %i\n", stepNumber);
     if (stepNumber > 0) {
       dir = true;
     }
@@ -84,6 +141,7 @@ int calibrate_cmd_handler(int argc, char **argv)
   }
   dir = true;
   for (int x = 0; x < spr; x++) {     //step through all full step positions, recording their encoder readings
+    DEBUG("Running step %i\n", x);
 
     encoderReading = 0;
     xtimer_usleep(100000);                         //moving too fast may not give accurate readings.  Motor needs time to settle after each step.
@@ -112,11 +170,12 @@ int calibrate_cmd_handler(int argc, char **argv)
     }
 
     fullStepReadings[x] = encoderReading;
-   // puts(fullStepReadings[x], DEC);      //print readings as a sanity check
+    DEBUG("Full step readings: %i\n", fullStepReadings[x]);      //print readings as a sanity check
     printf("%.1f", 100.0*x/spr);
     puts("%\n");
     
     oneStep();
+    DEBUG("...one step!\n");
   }
  // puts(" ");
  // puts("ticks:");                        //"ticks" represents the number of encoder counts between successive steps... these should be around 82 for a 1.8 degree stepper

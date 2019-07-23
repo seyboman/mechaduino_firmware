@@ -15,22 +15,21 @@ limitations under the License.
 */
 
 #include <rclc/rclc.h>
-
 #include <std_msgs/msg/string.h>
 
 #include <stdio.h>
-
 #include <thread.h>
-
 #include <shell.h>
+#include <periph/pwm.h>
 
 #include "as5047d_params.h"
 
 #include "mechaduino_state.h"
 #include "mechaduino_commands.h"
+#include "mechaduino_params.h"
 
 
-char rclc_thread_stack[THREAD_STACKSIZE_MAIN];
+char rclc_thread_stack[THREAD_STACKSIZE_DEFAULT];
 
 void *rclc_thread(void *arg)
 {
@@ -74,9 +73,43 @@ void *rclc_thread(void *arg)
   rclc_destroy_node(node);
 }
 
+void setup_pins()
+{
+  //gpio_init(VREF_2, GPIO_OUT);
+  //gpio_init(VREF_1, GPIO_OUT);
+  gpio_init(IN_4, GPIO_OUT);
+  gpio_init(IN_3, GPIO_OUT);
+  gpio_init(IN_2, GPIO_OUT);
+  gpio_init(IN_1, GPIO_OUT);
+
+  //gpio_init(ledPin, GPIO_OUT);
+
+  pwm_init(PWM_DEV(0), PWM_LEFT, 32000, 8);
+  pwm_init(PWM_DEV(1), PWM_LEFT, 32000, 8);
+  
+  pwm_set(PWM_DEV(0), 0, 0.33 * uMAX); //VREF_2
+  pwm_set(PWM_DEV(1), 1, 0.33 * uMAX); //VREF_1
+
+  gpio_set(IN_4);
+  gpio_clear(IN_3);
+  gpio_set(IN_2);
+  gpio_clear(IN_1);
+ 
+/*
+  analogFastWrite(VREF_2, 0.33 * uMAX);
+  analogFastWrite(VREF_1, 0.33 * uMAX);
+
+  IN_4_HIGH();   //  digitalWrite(IN_4, HIGH);
+  IN_3_LOW();    //  digitalWrite(IN_3, LOW);
+  IN_2_HIGH();   //  digitalWrite(IN_2, HIGH);
+  IN_1_LOW();    //  digitalWrite(IN_1, LOW);
+*/
+}
+
 int main(void)
 {
   init_params();
+  setup_pins();
 
   /*
   thread_create(rclc_thread_stack, sizeof(rclc_thread_stack),

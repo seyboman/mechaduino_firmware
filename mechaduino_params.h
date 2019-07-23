@@ -48,18 +48,18 @@ extern const int sin_1[];
 
 //Defines for pins:
 
-#define IN_4  6
-#define IN_3  5
-#define VREF_2 4
-#define VREF_1 9
-#define IN_2  7
-#define IN_1  8
-#define ledPin  13
-#define chipSelectPin A2 //output to chip select
+#define IN_4  ARDUINO_PIN_6
+#define IN_3  ARDUINO_PIN_5
+#define VREF_2 ARDUINO_PIN_4
+#define VREF_1 ARDUINO_PIN_9
+#define IN_2  ARDUINO_PIN_7
+#define IN_1  ARDUINO_PIN_8
+#define ledPin  ARDUINO_PIN_13
+#define chipSelectPin ARDUINO_PIN_A2 //output to chip select
 
-#define step_pin 1
-#define dir_pin 0
-#define enable_pin 2
+#define step_pin ARDUINO_PIN_1
+#define dir_pin ARDUINO_PIN_0
+#define enable_pin ARDUINO_PIN_2
 
 //for faster digitalWrite:
 #define IN_1_HIGH() (REG_PORT_OUTSET0 = PORT_PA06)
