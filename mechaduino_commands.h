@@ -22,9 +22,11 @@
 #include <shell.h>
 
 int calibrate_cmd_handler(int argc, char **argv);
+int walk_cmd_handler(int argc, char **argv);
 
 static const shell_command_t mechaduino_commands[] = {
   { "calibrate", "calibrate rotary encoder", calibrate_cmd_handler },
+  { "walk", "let stepper walk away", walk_cmd_handler },
   { NULL, NULL, NULL }
 };
 

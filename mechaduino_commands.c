@@ -17,7 +17,7 @@
 
 #include "mechaduino_state.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 int mod(int xMod, int mMod) {
@@ -25,6 +25,7 @@ int mod(int xMod, int mMod) {
 }
 
 void output(float theta, int effort) {
+   DEBUG("PWM output theta=%f, effort=%i\n", theta, effort);
    int angle_1;
    int angle_2;
    int v_coil_A;
@@ -45,6 +46,7 @@ void output(float theta, int effort) {
 
   v_coil_A = ((effort * sin_coil_A) / 1024);
   v_coil_B = ((effort * sin_coil_B) / 1024);
+  DEBUG("Compute angle_1=%i, angle_2=%i, sin_coil_A=%i, sin_coil_B=%i, v_coil_A=%i, v_coil_B=%i\n", angle_1, angle_2, sin_coil_A, sin_coil_B, v_coil_A, v_coil_B);
 
 /*    // For debugging phase voltages:
      SerialUSB.print(v_coil_A);
@@ -53,30 +55,65 @@ void output(float theta, int effort) {
 */
   //analogFastWrite(VREF_1, abs(v_coil_A));
   //analogFastWrite(VREF_2, abs(v_coil_B));
-  DEBUG("Set pwm on VREF_1...\n");
-  pwm_set(PWM_DEV(1), 1, abs(v_coil_A)); //VREF_1
-  DEBUG("Set pwm on VREF_2...\n");
+  DEBUG("Set pwm on VREF_1 to %i...\n", abs(v_coil_A));
+  pwm_set(PWM_DEV(1), 0, abs(v_coil_A)); //VREF_1
+  DEBUG("Set pwm on VREF_2 to %i...\n", abs(v_coil_B));
   pwm_set(PWM_DEV(0), 0, abs(v_coil_B)); //VREF_2
 
-  DEBUG("Set pins IN_1 and IN_2...\n");
   if (v_coil_A >= 0)  {
+    DEBUG("Set pin IN_2 and clear pin IN_1...\n");
     gpio_set(IN_2);  //REG_PORT_OUTSET0 = PORT_PA21;     //write IN_2 HIGH
     gpio_clear(IN_1);   //REG_PORT_OUTCLR0 = PORT_PA06;     //write IN_1 LOW
   }
   else  {
+    DEBUG("Clear pin IN_2 and set pin IN_1...\n");
     gpio_clear(IN_2);   //REG_PORT_OUTCLR0 = PORT_PA21;     //write IN_2 LOW
     gpio_set(IN_1);  //REG_PORT_OUTSET0 = PORT_PA06;     //write IN_1 HIGH
   }
 
-  DEBUG("Set pins IN_3 and IN_4...\n");
   if (v_coil_B >= 0)  {
+    DEBUG("Set pin IN_4 and clear pin IN_3...\n");
     gpio_set(IN_4);  //REG_PORT_OUTSET0 = PORT_PA20;     //write IN_4 HIGH
     gpio_clear(IN_3);   //REG_PORT_OUTCLR0 = PORT_PA15;     //write IN_3 LOW
   }
   else  {
+    DEBUG("Clear pin IN_4 and set pin IN_3...\n");
     gpio_clear(IN_4);     //REG_PORT_OUTCLR0 = PORT_PA20;     //write IN_4 LOW
     gpio_set(IN_3);    //REG_PORT_OUTSET0 = PORT_PA15;     //write IN_3 HIGH
   }
+}
+
+int walk_cmd_handler(int argc, char **argv)
+{
+   const int eff = 50;
+
+   pwm_set(PWM_DEV(1), 0, 0);
+   pwm_set(PWM_DEV(0), 0, 0);
+
+   for(int i=0; i<spr/4; ++i) {
+      gpio_set(IN_1);
+      gpio_clear(IN_2);
+      pwm_set(PWM_DEV(1), 0, eff);
+      pwm_set(PWM_DEV(0), 0, 0);
+      xtimer_usleep(100000);
+
+      gpio_set(IN_3);
+      gpio_clear(IN_4);
+      pwm_set(PWM_DEV(0), 0, eff);
+      pwm_set(PWM_DEV(1), 0, 0);
+      xtimer_usleep(100000);
+
+      gpio_clear(IN_1);
+      gpio_set(IN_2);
+      pwm_set(PWM_DEV(1), 0, eff);
+      pwm_set(PWM_DEV(0), 0, 0);
+      xtimer_usleep(100000);
+      gpio_clear(IN_3);
+      gpio_set(IN_4);
+      pwm_set(PWM_DEV(0), 0, eff);
+      pwm_set(PWM_DEV(1), 0, 0);
+      xtimer_usleep(100000);
+   }
 }
 
 void oneStep()
@@ -126,7 +163,6 @@ int calibrate_cmd_handler(int argc, char **argv)
     return;
   }
 
-  int stepNumber = 0;
   while (stepNumber != 0) {       //go to step zero
     DEBUG("Running step %i\n", stepNumber);
     if (stepNumber > 0) {

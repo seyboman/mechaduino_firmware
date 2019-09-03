@@ -425,5 +425,5 @@ void init_params() {
    aps = 360.0/ spr;       // angle per step
    stepangle = aps/32.0;   // for step/dir interrupt: aps/32 is the equivalent of 1/32 microsteps
 
-   uMAX = (255/3.3)*(iMAX*10*rSense);   // 255 for 8-bit pwm, 1023 for 10 bit, must also edit analogFastWrite
+   uMAX = (int)((255.0/3.3)*(iMAX*10.0*rSense));   // 255 for 8-bit pwm, 1023 for 10 bit, must also edit analogFastWrite
 }

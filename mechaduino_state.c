@@ -10,5 +10,5 @@
 
 volatile as5047d_t enc_dev;
 
-volatile int dir;
-volatile int stepNumber; // step index for cal routine
+volatile int dir = false;
+volatile int stepNumber = 0; // step index for cal routine

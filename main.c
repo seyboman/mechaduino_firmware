@@ -75,8 +75,6 @@ void *rclc_thread(void *arg)
 
 void setup_pins()
 {
-  //gpio_init(VREF_2, GPIO_OUT);
-  //gpio_init(VREF_1, GPIO_OUT);
   gpio_init(IN_4, GPIO_OUT);
   gpio_init(IN_3, GPIO_OUT);
   gpio_init(IN_2, GPIO_OUT);
@@ -84,11 +82,14 @@ void setup_pins()
 
   //gpio_init(ledPin, GPIO_OUT);
 
-  pwm_init(PWM_DEV(0), PWM_LEFT, 32000, 8);
-  pwm_init(PWM_DEV(1), PWM_LEFT, 32000, 8);
-  
+  pwm_init(PWM_DEV(0), PWM_LEFT, 187000, 255);
   pwm_set(PWM_DEV(0), 0, 0.33 * uMAX); //VREF_2
-  pwm_set(PWM_DEV(1), 1, 0.33 * uMAX); //VREF_1
+  pwm_init(PWM_DEV(1), PWM_LEFT, 187000, 255);
+  pwm_set(PWM_DEV(1), 0, 0.33 * uMAX); //VREF_1
+  //gpio_init(VREF_2, GPIO_OUT);
+  //gpio_init(VREF_1, GPIO_OUT);
+  //gpio_set(VREF_2);
+  //gpio_set(VREF_1);
 
   gpio_set(IN_4);
   gpio_clear(IN_3);
@@ -104,6 +105,10 @@ void setup_pins()
   IN_2_HIGH();   //  digitalWrite(IN_2, HIGH);
   IN_1_LOW();    //  digitalWrite(IN_1, LOW);
 */
+
+  //pwm_init(PWM_DEV(1), PWM_LEFT, 187000, 255);
+  //pwm_set(PWM_DEV(1), 0, 127);
+  //pwm_set(PWM_DEV(1), 1, 127);
 }
 
 int main(void)
