@@ -13,5 +13,6 @@ USEMODULE += shell_commands
 USEMODULE += ps
 USEMODULE += periph_pwm
 USEMODULE += xtimer
+USEMODULE += periph_flashpage
 
 USEMODULE += auto_init

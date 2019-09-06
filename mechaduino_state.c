@@ -8,7 +8,7 @@
 
 #include "mechaduino_state.h"
 
-volatile as5047d_t enc_dev;
+as5047d_t enc_dev;
 
 volatile int dir = false;
 volatile int stepNumber = 0; // step index for cal routine

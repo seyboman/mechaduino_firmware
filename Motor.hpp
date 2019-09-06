@@ -1,58 +1,111 @@
-//Contains the Mechaduino parameter defintions
-//Copied from Mechaduino-Firmware project
+/*
+ * Copyright (C) 2019 Florian Seybold
+ *
+ * This file is subject to the terms and conditions of the GNU Lesser
+ * General Public License v2.1. See the file LICENSE in the top level
+ * directory for more details.
+ */
 
-#include "mechaduino_params.h"
+/**
+ * @ingroup     mechaduino_firmware
+ *
+ * @{
+ * @file
+ * @brief       Mechaduino motor
+ *
+ * @author      Florian Seybold <florian@seybold.space>
+ */
 
-#include "math.h"
+#ifndef MOTOR_HPP
+#define MOTOR_HPP
 
-//----Current Parameters-----
+#include "arduino_pinmap.h"
 
-volatile float Fs = 6500.0;   //Sample frequency in Hz
+//Defines for pins:
+#define IN_4  ARDUINO_PIN_6
+#define IN_3  ARDUINO_PIN_5
+#define VREF_2 ARDUINO_PIN_4
+#define VREF_1 ARDUINO_PIN_9
+#define IN_2  ARDUINO_PIN_7
+#define IN_1  ARDUINO_PIN_8
+#define ledPin  ARDUINO_PIN_13
+#define chipSelectPin ARDUINO_PIN_A2 //output to chip select
 
-volatile float pKp = 15.0;      //position mode PID values.  Depending on your motor/load/desired performance, you will need to tune these values.  You can also implement your own control scheme
-volatile float pKi = 0.2;
-volatile float pKd = 250.0;//1000.0;
-volatile float pLPF = 30;       //break frequency in hertz
+#include <periph/pwm.h>
 
-volatile float vKp = 0.001;       //velocity mode PID values.  Depending on your motor/load/desired performance, you will need to tune these values.  You can also implement your own control scheme
-volatile float vKi = 0.001;
-volatile float vKd = 0.0;
-volatile float vLPF = 100.0;       //break frequency in hertz
+class Motor
+{
+public:
+   Motor()
+   {
+      gpio_init(IN_4, GPIO_OUT);
+      gpio_init(IN_3, GPIO_OUT);
+      gpio_init(IN_2, GPIO_OUT);
+      gpio_init(IN_1, GPIO_OUT);
 
-// This is the encoder lookup table (created by calibration routine):
+      pwm_init(PWM_DEV(0), PWM_LEFT, 187000, 255);
+      pwm_set(PWM_DEV(0), 0, 0.33 * uMax); //VREF_2
+      pwm_init(PWM_DEV(1), PWM_LEFT, 187000, 255);
+      pwm_set(PWM_DEV(1), 0, 0.33 * uMax); //VREF_1
 
-const float __attribute__((__aligned__(256))) lookup[16384] = {
-//Put lookup table here!
+      gpio_set(IN_4);
+      gpio_clear(IN_3);
+      gpio_set(IN_2);
+      gpio_clear(IN_1);
+   }
+
+   int mod(int xMod, int mMod) const {
+      return (xMod % mMod + mMod) % mMod;
+   }
+
+   void output(const float& theta, const int& effort) const
+   {
+      const int phase_multiplier = 10 * spr / 4;
+
+      int angle_1 = mod((phase_multiplier * theta) , 3600);   //
+      int angle_2 = mod((phase_multiplier * theta)+900 , 3600);
+
+      int sin_coil_A  = sin_1[angle_1];
+      int sin_coil_B = sin_1[angle_2];
+
+      int v_coil_A = ((effort * sin_coil_A) / 1024);
+      int v_coil_B = ((effort * sin_coil_B) / 1024);
+      //DEBUG("Compute angle_1=%i, angle_2=%i, sin_coil_A=%i, sin_coil_B=%i, v_coil_A=%i, v_coil_B=%i\n", angle_1, angle_2, sin_coil_A, sin_coil_B, v_coil_A, v_coil_B);
+
+      pwm_set(PWM_DEV(1), 0, abs(v_coil_A)); //VREF_1
+      pwm_set(PWM_DEV(0), 0, abs(v_coil_B)); //VREF_2
+
+      if (v_coil_A >= 0)  {
+         gpio_set(IN_2);  //REG_PORT_OUTSET0 = PORT_PA21;     //write IN_2 HIGH
+         gpio_clear(IN_1);   //REG_PORT_OUTCLR0 = PORT_PA06;     //write IN_1 LOW
+      }
+      else  {
+         gpio_clear(IN_2);   //REG_PORT_OUTCLR0 = PORT_PA21;     //write IN_2 LOW
+         gpio_set(IN_1);  //REG_PORT_OUTSET0 = PORT_PA06;     //write IN_1 HIGH
+      }
+
+      if (v_coil_B >= 0)  {
+         gpio_set(IN_4);  //REG_PORT_OUTSET0 = PORT_PA20;     //write IN_4 HIGH
+         gpio_clear(IN_3);   //REG_PORT_OUTCLR0 = PORT_PA15;     //write IN_3 LOW
+      }
+      else  {
+         gpio_clear(IN_4);     //REG_PORT_OUTCLR0 = PORT_PA20;     //write IN_4 LOW
+         gpio_set(IN_3);    //REG_PORT_OUTSET0 = PORT_PA15;     //write IN_3 HIGH
+      }
+   }
+
+   const int spr = 200;                // 200 steps per revolution  -- for 400 step/rev, you should only need to edit this value
+   const int uMax = (int)((255.0/3.3)*(iMax*10.0*rSense));   // 255 for 8-bit pwm, 1023 for 10 bit, must also edit analogFastWrite
+   const float aps = 360.0/ spr;       // angle per step
+
+private:
+   const float iMax = 1.0;             // Be careful adjusting this.  While the A4954 driver is rated for 2.0 Amp peak currents, it cannot handle these currents continuously.  Depending on how you operate the Mechaduino, you may be able to safely raise this value...please refer to the A4954 datasheet for more info
+   const float rSense = 0.150;
+
+   static const int sin_1[];
 };
 
-
-
-volatile float pLPFa = 0.0;   // initialized in init_params()
-volatile float pLPFb = 0.0;   // initialized in init_params()
-volatile float vLPFa = 0.0;   // initialized in init_params()
-volatile float vLPFb = 0.0;   // initialized in init_params()
-
-
-const int spr = 200;                // 200 steps per revolution  -- for 400 step/rev, you should only need to edit this value
-float aps = 0.0;   // initialized in init_params()
-int cpr = 16384;                    // counts per rev
-float stepangle = 0.0;   // initialized in init_params() 
-
-//volatile float PA = aps;            // Phase advance...aps = 1.8 for 200 steps per rev, 0.9 for 400
-
-const float iMAX = 1.0;             // Be careful adjusting this.  While the A4954 driver is rated for 2.0 Amp peak currents, it cannot handle these currents continuously.  Depending on how you operate the Mechaduino, you may be able to safely raise this value...please refer to the A4954 datasheet for more info
-const float rSense = 0.150;
-volatile int uMAX = 0.0;   // initialized in init_params()
-
-// A sine lookup table is faster than using the built in sin() function
-// for motor commutation... shifted by 0 degrees (this appears to allow
-// for a less noisy cal routine) and multiplied by 1024
-// generated by:
-//  perl -e 'for my $a (0..3600) {
-//       printf "%+6.0f,", sin($a * 3.1415 / 180 / 10.0)*1024;
-//       print "\n" if $a % 10 == 9;
-//  }'
-const int sin_1[] = {
+const int Motor::sin_1[] = {
     +0,    +2,    +4,    +5,    +7,    +9,   +11,   +13,   +14,   +16,
    +18,   +20,   +21,   +23,   +25,   +27,   +29,   +30,   +32,   +34,
    +36,   +38,   +39,   +41,   +43,   +45,   +46,   +48,   +50,   +52,
@@ -414,16 +467,6 @@ const int sin_1[] = {
    -36,   -34,   -32,   -31,   -29,   -27,   -25,   -23,   -22,   -20,
    -18,   -16,   -14,   -13,   -11,    -9,    -7,    -6,    -4,    -2,
     -0,
-};
+   };
 
-void init_params() {
-   pLPFa = exp(pLPF*-2*3.14159/Fs); // z = e^st pole mapping
-   pLPFb = (1.0-pLPFa);
-   vLPFa = exp(vLPF*-2*3.14159/Fs); // z = e^st pole mapping
-   vLPFb = (1.0-vLPFa)* Fs * 0.16666667;
-
-   aps = 360.0/ spr;       // angle per step
-   stepangle = aps/32.0;   // for step/dir interrupt: aps/32 is the equivalent of 1/32 microsteps
-
-   uMAX = (int)((255.0/3.3)*(iMAX*10.0*rSense));   // 255 for 8-bit pwm, 1023 for 10 bit, must also edit analogFastWrite
-}
+#endif

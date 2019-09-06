@@ -21,7 +21,7 @@
 
 #include <as5047d.h>
 
-extern volatile as5047d_t enc_dev;
+extern as5047d_t enc_dev;
 
 extern volatile int dir;
 extern volatile int stepNumber; // step index for cal routine

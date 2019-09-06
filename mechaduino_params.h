@@ -25,7 +25,6 @@ extern volatile float vLPF;
 
 extern const float lookup[];
 
-
 extern volatile float pLPFa;
 extern volatile float pLPFb;
 extern volatile float vLPFa;
@@ -43,6 +42,12 @@ extern const float iMAX;
 extern const float rSense;
 extern volatile int uMAX;
 
+//flashing
+extern const unsigned page_size;
+extern const unsigned floats_per_page;
+extern const void * page_ptr;
+extern unsigned page_count;
+extern float page[];
 
 extern const int sin_1[];
 
@@ -89,5 +94,6 @@ extern const int sin_1[];
 #endif
 
 
+void init_params();
 
 #endif
