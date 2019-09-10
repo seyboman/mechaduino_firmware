@@ -25,6 +25,10 @@
 #include "as5047d_params.h"
 #include "Stepper.hpp"
 
+#define ENABLE_DEBUG    (0)
+#include "debug.h"
+
+
 class Encoder
 {
 public:
@@ -37,7 +41,12 @@ public:
 
    int16_t read()
    {
-      as5047d_read(&enc_dev);
+      return as5047d_read(&enc_dev);
+   }
+
+   float angle()
+   {
+      return lookup[as5047d_read(&enc_dev)];
    }
 
    /// this is the calibration routine
@@ -71,7 +80,7 @@ public:
          return;
       }
 
-      while (stepper.stepNumber != 0) {       //go to step zero
+      /*while (stepper.stepNumber != 0) {       //go to step zero
          if (stepper.stepNumber > 0) {
             stepper.dir = true;
          }
@@ -81,7 +90,7 @@ public:
          }
          stepper.step();
          xtimer_usleep(100000);
-      }
+      }*/
       stepper.dir = true;
       for (int x = 0; x < stepper.motor.spr; x++) {     //step through all full step positions, recording their encoder readings
 
@@ -177,6 +186,10 @@ public:
       //SerialUSB.print((uintptr_t) page_ptr, HEX);
       //SerialUSB.print(" page size PSZ=");
       //SerialUSB.print(NVMCTRL->PARAM.bit.PSZ);
+      DEBUG("calibrate(): iStart=%i, jStart=%i, spr=%i\n", iStart, jStart, stepper.motor.spr);
+
+      page_count = 0;
+      page_number = flashpage_page((void*)&lookup);
 
       for (int i = iStart; i < (iStart + stepper.motor.spr + 1); i++) {
          ticks = fullStepReadings[stepper.motor.mod((i + 1), stepper.motor.spr)] - fullStepReadings[stepper.motor.mod((i), stepper.motor.spr)];
@@ -187,6 +200,8 @@ public:
          else if (ticks > 15000) {
             ticks -= cpr;
          }
+      
+         DEBUG("calibrate(): iStart=%i, jStart=%i, spr=%i, i=%i, ticks=%f\n", iStart, jStart, stepper.motor.spr, i, ticks);
 
          //Here we print an interpolated angle corresponding to each encoder count (in order)
          if (ticks > 1) {              //if encoder counts were increasing during cal routine...
@@ -224,11 +239,7 @@ public:
                   store_lookup(0.001 * stepper.motor.mod(1000 * (stepper.motor.aps * (i) + (stepper.motor.aps * ((ticks + j)) / float(ticks))), 360000.0));
                }
             }
-
-            puts("calibrate(): Publishing lookup.");
          }
-
-
       }
 
       if (page_count != 0)
@@ -241,6 +252,15 @@ public:
       //SerialUSB.println(" ");
       //SerialUSB.println(" ");
    }
+
+   void printLookup()
+   {
+      for(int c = 0; c<cpr; ++c)
+      {
+         printf("%f, ", lookup[c]);
+      }
+      printf("\n");
+   };
 
 private:
    void write_page()
@@ -256,11 +276,14 @@ private:
 
       //flash.erase((const void*) page_ptr, sizeof(page));
       //flash.write((const void*) page_ptr, (const void *) page, sizeof(page));
+      
+      printf("Writing lookup page number %i\n", page_number);
       flashpage_write(page_number, page);
    }
 
    void store_lookup(const float& lookupAngle)
    {
+      DEBUG("store_lookup(): page_count=%i\n", page_count);
       page[page_count++] = lookupAngle;
       if(page_count != floats_per_page)
          return;
@@ -278,15 +301,17 @@ private:
    as5047d_t enc_dev;
 
    unsigned page_count = 0;
-   unsigned page_number = flashpage_page(&lookup);
+   unsigned page_number = flashpage_page((void*)&lookup);
 
    static const unsigned page_size = FLASHPAGE_SIZE; // actual size is 64?
    static const unsigned floats_per_page = page_size / sizeof(float);
-   float page[floats_per_page];
+   float page[floats_per_page] = { };
 
    const int cpr = 16384;                    // counts per rev
 
-   float __attribute__((__aligned__(256))) lookup[16384];
+   static const float __attribute__((__aligned__(256))) lookup[16384];
 };
+
+const float Encoder::lookup[16384] = { };
 
 #endif

@@ -27,29 +27,41 @@ class Stepper {
 public:
    Stepper(const Motor& motor_, const bool& dir_ = true)
       :  motor(motor_),
-         dir(dir_),
-         stepNumber(0)
+         dir(dir_)
    { }
 
    void step()
    {
       if (!dir) {
-         stepNumber += 1;
+         state = (state+1)%4;
       }
       else {
-         stepNumber -= 1;
+         state = (state-1)%4;
       }
 
       //output(1.8 * stepNumber, 64); //updata 1.8 to aps..., second number is control effort
-      motor.output(motor.aps * stepNumber, (int)(0.33 * motor.uMax));
+      //motor.output(motor.aps * stepNumber, (int)(0.33 * motor.uMax));
+      motor.output(motor.aps * state, (int)(0.33 * motor.uMax));
       xtimer_usleep(10000);
    }
 
+   void walkaround()
+   {
+      for(int s=0; s<motor.spr; ++s) {
+         step();
+      }
+   }
+
    int dir;
-   int stepNumber; // step index for cal routine
    const Motor& motor;
 
 private:
+   /*void gray(const uint8_t& n) const
+   {
+      return n ^ (n >> 1);
+   }*/
+
+   uint8_t state = 0;
 
 };
 

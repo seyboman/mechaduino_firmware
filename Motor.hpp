@@ -33,11 +33,17 @@
 
 #include <periph/pwm.h>
 
+#define ENABLE_DEBUG    (0)
+#include "debug.h"
+
+
 class Motor
 {
 public:
    Motor()
    {
+      DEBUG("Initializing motor...\n");
+
       gpio_init(IN_4, GPIO_OUT);
       gpio_init(IN_3, GPIO_OUT);
       gpio_init(IN_2, GPIO_OUT);
