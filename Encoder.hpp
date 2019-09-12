@@ -39,14 +39,14 @@ public:
       }
    }
 
-   int16_t read()
+   int16_t read() const
    {
-      return as5047d_read(&enc_dev);
+      return as5047d_read((as5047d_t*)&enc_dev);
    }
 
-   float angle()
+   float angle() const
    {
-      return lookup[as5047d_read(&enc_dev)];
+      return lookup[read()];
    }
 
    /// this is the calibration routine

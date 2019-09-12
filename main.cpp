@@ -24,6 +24,7 @@ limitations under the License.
 #include "Motor.hpp"
 #include "Stepper.hpp"
 #include "Encoder.hpp"
+#include "Controller.hpp"
 
 //#include "mechaduino_state.h"
 //#include "mechaduino_commands.h"
@@ -34,6 +35,7 @@ namespace mechaduino {
    Motor *motor;
    Stepper *stepper;
    Encoder *encoder;
+   Controller *controller;
 }
 
 int main(void)
@@ -41,6 +43,7 @@ int main(void)
    mechaduino::motor = new Motor();
    mechaduino::stepper = new Stepper(*mechaduino::motor);
    mechaduino::encoder = new Encoder();
+   mechaduino::controller = new Controller(*mechaduino::motor, *mechaduino::encoder, 0);
 
   /* start shell */
   puts("Starting the shell now...");
@@ -50,6 +53,7 @@ int main(void)
      { "calibrate", "calibrate encoder", [](int, char**)->int{ mechaduino::encoder->calibrate(*mechaduino::stepper); return 0; } },
      { "lookup", "print angle lookup table", [](int, char**)->int{ mechaduino::encoder->printLookup(); return 0; } },
      { "angle", "print current angle", [](int, char**)->int{ printf("Current angle is %f°.\n", mechaduino::encoder->angle()); return 0; } },
+     { "control", "start/stop control loop", [](int, char**)->int{ mechaduino::controller->start(); return 0; } },
      { NULL, NULL, NULL }
   };
   char line_buf[SHELL_DEFAULT_BUFSIZE];
