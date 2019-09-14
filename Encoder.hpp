@@ -91,6 +91,8 @@ public:
          stepper.step();
          xtimer_usleep(100000);
       }*/
+      stepper.home();
+
       stepper.dir = true;
       for (int x = 0; x < stepper.motor.spr; x++) {     //step through all full step positions, recording their encoder readings
 
@@ -312,6 +314,8 @@ private:
    static const float __attribute__((__aligned__(256))) lookup[16384];
 };
 
-const float Encoder::lookup[16384] = { };
+const float Encoder::lookup[16384] = {
+   #include "lookup.dat"
+};
 
 #endif

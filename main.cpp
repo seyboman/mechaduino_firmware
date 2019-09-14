@@ -53,7 +53,26 @@ int main(void)
      { "calibrate", "calibrate encoder", [](int, char**)->int{ mechaduino::encoder->calibrate(*mechaduino::stepper); return 0; } },
      { "lookup", "print angle lookup table", [](int, char**)->int{ mechaduino::encoder->printLookup(); return 0; } },
      { "angle", "print current angle", [](int, char**)->int{ printf("Current angle is %f°.\n", mechaduino::encoder->angle()); return 0; } },
-     { "control", "start/stop control loop", [](int, char**)->int{ mechaduino::controller->start(); return 0; } },
+     { "control", "start/stop/set control loop", [](int argc, char** argv)->int{
+         for(int i=0; i<argc; ++i) {
+            printf("%s,", argv[i]);
+         }
+         printf("\n");
+
+         if(argc==2) {
+            if(strcmp(argv[1],"start")==0) mechaduino::controller->start();
+            if(strcmp(argv[1],"stop")==0) mechaduino::controller->stop();
+         }                                                      
+         else if(argc==3) {
+            if(strcmp(argv[1],"set")==0) {
+               mechaduino::controller->r = atoi(argv[2]);
+            }
+            else return -1;
+         }
+         else return -1;
+
+         return 0;
+     } },
      { NULL, NULL, NULL }
   };
   char line_buf[SHELL_DEFAULT_BUFSIZE];

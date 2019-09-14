@@ -33,16 +33,31 @@ public:
    void step()
    {
       if (!dir) {
-         state = (state+1)%4;
+         state += 1;
       }
       else {
-         state = (state-1)%4;
+         state -= 1;
       }
 
       //output(1.8 * stepNumber, 64); //updata 1.8 to aps..., second number is control effort
       //motor.output(motor.aps * stepNumber, (int)(0.33 * motor.uMax));
       motor.output(motor.aps * state, (int)(0.33 * motor.uMax));
       xtimer_usleep(10000);
+   }
+
+   void home()
+   {
+      while (state != 0) {       //go to step zero
+         if (state > 0) {
+            dir = true;
+         }
+         else
+         {
+            dir = false;
+         }
+         step();
+         xtimer_usleep(100000);
+      }
    }
 
    void walkaround()
@@ -61,7 +76,7 @@ private:
       return n ^ (n >> 1);
    }*/
 
-   uint8_t state = 0;
+   int state = 0;
 
 };
 

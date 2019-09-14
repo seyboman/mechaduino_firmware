@@ -45,6 +45,8 @@ public:
    {
       DEBUG("Controller::start(): Creating thread with priority=%i, period=%i...\n", priority, period);
 
+      if(go==true) return;
+
       kernel_pid_t pid = thread_create(thread_stack, sizeof(thread_stack),
          priority,
          THREAD_CREATE_STACKTEST,
@@ -52,6 +54,8 @@ public:
          (void*)this,
          "controller");
       
+      go=true;
+
       DEBUG("Controller::start(): Created thread %i...\n", pid);
    }
 
@@ -60,10 +64,21 @@ public:
       go=false;
    }
 
+   float r = 0.0; // Setpoint
+
 private:
    void* run()
    {
       DEBUG("Controller::run(): Entering...\n");
+
+      wrap_count = 0;
+      y_1 = 0.0;
+      yw_1 = 0.0;
+      r = 0.0;
+      ITerm = 0.0;
+      DTerm = 0.0;
+
+      //size_t s = 0;
 
       last_wakeup=xtimer_now();
       while(go)
@@ -88,7 +103,7 @@ private:
          float u = (pKp * e) + ITerm + DTerm;
 
          y_1 = y;  //copy current value of y to previous value (y_1) for next control cycle before PA angle added
-
+         //if(s++%100==0) printf("Controller::run(): wrap_count=%i, y=%f, yw=%f, y_1=%f, yw_1=%f, r=%f, ITerm=%f, DTerm=%f, e=%f, u=%f\n", wrap_count, y, yw, y_1, yw_1, r, ITerm, DTerm, e, u);
 
          if (u > 0)          //Depending on direction we want to apply torque, add or subtract a phase angle of PA for max effective torque.  PA should be equal to one full step angle: if the excitation angle is the same as the current position, we would not move!  
          {                 //You can experiment with "Phase Advance" by increasing PA when operating at high speeds
@@ -123,13 +138,12 @@ private:
    //const uint32_t period;
 
    char thread_stack[THREAD_STACKSIZE_DEFAULT];
-   bool go = true;
+   bool go = false;
    xtimer_ticks32_t last_wakeup;
 
    long wrap_count = 0;  //keeps track of how many revolutions the motor has gone though (so you can command angles outside of 0-360)
    float y_1 = 0.0;
    float yw_1 = 0.0;
-   float r = 0.0;
    float ITerm = 0.0;
    float DTerm = 0.0;
 
@@ -137,8 +151,9 @@ private:
    const float aps = 360.0/ spr;       // angle per step
    const float PA = aps;            // Phase advance...aps = 1.8 for 200 steps per rev, 0.9 for 400
 
-   const float Fs = 6500.0;   //Sample frequency in Hz
-   const uint32_t period = (uint32_t)((1.0/Fs)*1000000);
+   //const float Fs = 6500.0;   //Sample frequency in Hz
+   const float Fs = 2000.0;   //Sample frequency in Hz
+   const uint32_t period = (uint32_t)(1000000.0/Fs);
 
    const float pKp = 15.0;      //position mode PID values.  Depending on your motor/load/desired performance, you will need to tune these values.  You can also implement your own control scheme
    const float pKi = 0.2;
