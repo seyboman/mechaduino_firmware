@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include <rclc/rclc.h>
-#include <std_msgs/msg/string.h>
-
 #include <stdio.h>
 #include <thread.h>
 #include <shell.h>
@@ -25,6 +22,8 @@ limitations under the License.
 #include "Stepper.hpp"
 #include "Encoder.hpp"
 #include "Controller.hpp"
+//#include "Communicator.hpp"
+#include "ActionServer.hpp"
 
 //#include "mechaduino_state.h"
 //#include "mechaduino_commands.h"

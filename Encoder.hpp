@@ -19,6 +19,8 @@
 #ifndef ENCODER_HPP
 #define ENCODER_HPP
 
+#include <cstring>
+
 #include <xtimer.h>
 #include <periph/flashpage.h>
 
@@ -203,7 +205,7 @@ public:
             ticks -= cpr;
          }
       
-         DEBUG("calibrate(): iStart=%i, jStart=%i, spr=%i, i=%i, ticks=%f\n", iStart, jStart, stepper.motor.spr, i, ticks);
+         DEBUG("calibrate(): iStart=%i, jStart=%i, spr=%i, i=%i, ticks=%i\n", iStart, jStart, stepper.motor.spr, i, ticks);
 
          //Here we print an interpolated angle corresponding to each encoder count (in order)
          if (ticks > 1) {              //if encoder counts were increasing during cal routine...

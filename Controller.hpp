@@ -43,7 +43,7 @@ public:
 
    void start()
    {
-      DEBUG("Controller::start(): Creating thread with priority=%i, period=%i...\n", priority, period);
+      DEBUG("Controller::start(): Creating thread with priority=%i, period=%li...\n", priority, period);
 
       if(go==true) return;
 

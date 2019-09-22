@@ -1,9 +1,12 @@
-DIRS += /home/seyboman/ros2-seyboman_riot_ws/install/rclc
-USEMODULE += rclc
-include /home/seyboman/ros2-seyboman_riot_ws/install/rclc/Makefile.include
-DIRS += /home/seyboman/ros2-seyboman_riot_ws/install/std_msgs
-USEMODULE += std_msgs
-include /home/seyboman/ros2-seyboman_riot_ws/install/std_msgs/Makefile.include
+#DIRS += /home/seyboman/riot-ros2-seyboman-master-ws/install/rclc
+#USEMODULE += rclc
+#include /home/seyboman/riot-ros2-seyboman-master-ws/install/rclc/Makefile.include
+#DIRS += /home/seyboman/ros2-seyboman_riot_ws/install/std_msgs
+#USEMODULE += std_msgs
+#include /home/seyboman/ros2-seyboman_riot_ws/install/std_msgs/Makefile.include
+DIRS += /home/seyboman/riot-ros2-seyboman-master-ws/install/rcl_action
+USEMODULE += rcl_action
+include /home/seyboman/riot-ros2-seyboman-master-ws/install/rcl_action/Makefile.include
 
 USEMODULE += as5047d
 

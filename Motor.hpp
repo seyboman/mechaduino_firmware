@@ -19,6 +19,8 @@
 #ifndef MOTOR_HPP
 #define MOTOR_HPP
 
+#include <cmath>
+
 #include "arduino_pinmap.h"
 
 //Defines for pins:
